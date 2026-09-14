@@ -1,0 +1,76 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://app:${POSTGRES_PASSWORD:-app}@postgres:5432/video_dl
+      REDIS_URL: redis://redis:6379
+      COOKIE_SECRET: ${COOKIE_SECRET:?set COOKIE_SECRET in your .env file}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      # Signs every access/refresh token. Separate from COOKIE_SECRET so it
+      # can be rotated on its own — rotating it signs everyone out, which is
+      # the intended emergency lever after a suspected key compromise.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in your .env file}
+      ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-900}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-2592000}
+      EXPOSE_DOCS: ${EXPOSE_DOCS:-true}
+      TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      PORT: "8080"
+      # Only set when a cookies file is actually mounted below.
+      YTDLP_COOKIES_FILE: ${YTDLP_COOKIES_FILE:-}
+    volumes:
+      # Optional, read-only: a Netscape-format cookies export used for
+      # login-gated platforms (Instagram, Facebook...). Point
+      # COOKIES_HOST_PATH at your file and set YTDLP_COOKIES_FILE to
+      # /run/secrets/cookies.txt. Defaults to /dev/null so the stack still
+      # starts with no file present.
+      - ${COOKIES_HOST_PATH:-/dev/null}:/run/secrets/cookies.txt:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    ports:
+      - "3000:80"
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_DB: video_dl
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Applied once, only when the data volume is empty (Postgres
+      # entrypoint convention) — see README for re-applying manually.
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d video_dl"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:

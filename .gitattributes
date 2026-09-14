@@ -1,0 +1,14 @@
+# Normalise line endings in the repository to LF, whatever the OS of the
+# person committing. Without this, a Windows checkout rewrites every file
+# with CRLF and the next machine sees the whole tree as modified.
+* text=auto eol=lf
+
+# Shell scripts and Docker-consumed files must keep LF even on Windows:
+# a CRLF shebang breaks the interpreter inside a Linux container.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.conf text eol=lf
+*.sql text eol=lf
+
+# Lockfiles are generated — keep them out of diff noise in reviews.
+package-lock.json linguist-generated=true diff=json
