@@ -43,6 +43,53 @@ export default async function adminRoutes(fastify) {
     return rows;
   });
 
+  // Dashboard overview: headline counters, a 14-day activity trend, top
+  // source domains, and the most recent signups. Kept as one round trip
+  // (several small queries, one response) rather than making the sidebar
+  // dashboard fire off five separate requests.
+  fastify.get('/api/admin/stats', async () => {
+    const { rows: [totals] } = await pool.query(`
+      SELECT
+        (SELECT count(*) FROM users)                                                            AS total_users,
+        (SELECT count(*) FROM users WHERE created_at >= now() - interval '30 days')              AS new_users_30d,
+        (SELECT count(*) FROM download_logs WHERE created_at >= date_trunc('month', now()))      AS downloads_this_month,
+        (SELECT count(*) FROM download_logs WHERE created_at >= now() - interval '24 hours')     AS downloads_24h,
+        (SELECT count(*) FROM download_logs)                                                     AS downloads_all_time,
+        (SELECT count(*) FROM download_logs
+          WHERE completed = false AND created_at >= now() - interval '24 hours')                 AS failed_24h
+    `);
+
+    const { rows: usersByRole } = await pool.query(
+      'SELECT role, count(*) FROM users GROUP BY role ORDER BY role',
+    );
+
+    const { rows: byDay } = await pool.query(`
+      SELECT date_trunc('day', created_at)::date AS day, count(*) AS count
+        FROM download_logs
+       WHERE created_at >= now() - interval '14 days'
+       GROUP BY 1
+       ORDER BY 1
+    `);
+
+    // Host extracted from source_url rather than joined against
+    // `platforms`: a platform can be renamed/removed after the fact, but
+    // the log should still say what was actually hit.
+    const { rows: topSources } = await pool.query(`
+      SELECT regexp_replace(source_url, '^https?://(?:www\\.)?([^/]+).*', '\\1') AS host, count(*) AS count
+        FROM download_logs
+       WHERE created_at >= now() - interval '30 days'
+       GROUP BY 1
+       ORDER BY 2 DESC
+       LIMIT 8
+    `);
+
+    const { rows: recentUsers } = await pool.query(
+      'SELECT id, email, role, created_at FROM users ORDER BY created_at DESC LIMIT 8',
+    );
+
+    return { totals, usersByRole, byDay, topSources, recentUsers };
+  });
+
   // Real-time dashboard: current tier config + today's usage snapshot.
   fastify.get('/api/admin/quotas', async () => {
     const { rows: tiers } = await pool.query('SELECT * FROM tier_quotas ORDER BY role');

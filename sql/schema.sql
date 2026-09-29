@@ -208,7 +208,7 @@ INSERT INTO site_content (section, data) VALUES
   "title": "Un plan simple, qui grandit avec vous",
   "subtitle": "Commencez gratuitement, passez à Premium quand les playlists et la HD deviennent indispensables.",
   "free": { "name": "Gratuit", "price": "0€", "sub": "Pour découvrir le service", "ctaLabel": "Commencer" },
-  "premium": { "name": "Premium", "price": "9,99€", "priceSuffix": "/mois", "sub": "Pour un usage intensif", "ctaLabel": "Passer Premium", "extraFeatures": ["Support prioritaire"] },
+  "premium": { "name": "Premium", "price": "9,99€", "priceSuffix": "/mois", "sub": "Pour un usage intensif", "ctaLabel": "Contacter l'administrateur", "extraFeatures": ["Support prioritaire"] },
   "enterprise": {
     "name": "Entreprise",
     "price": "Sur mesure",
@@ -361,7 +361,7 @@ INSERT INTO site_content (section, lang, data) VALUES
   "title": "One simple plan that grows with you",
   "subtitle": "Start free, move to Premium when playlists and HD become essential.",
   "free": { "name": "Free", "price": "€0", "sub": "To discover the service", "ctaLabel": "Get started" },
-  "premium": { "name": "Premium", "price": "€9.99", "priceSuffix": "/month", "sub": "For heavy use", "ctaLabel": "Go Premium", "extraFeatures": ["Priority support"] },
+  "premium": { "name": "Premium", "price": "€9.99", "priceSuffix": "/month", "sub": "For heavy use", "ctaLabel": "Contact the admin", "extraFeatures": ["Priority support"] },
   "enterprise": {
     "name": "Enterprise",
     "price": "Custom",

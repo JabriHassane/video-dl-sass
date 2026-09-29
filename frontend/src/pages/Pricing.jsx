@@ -14,7 +14,7 @@ const DEFAULTS = {
     price: '9,99€',
     priceSuffix: '/mois',
     sub: 'Pour un usage intensif',
-    ctaLabel: 'Passer Premium',
+    ctaLabel: "Contacter l'administrateur",
     extraFeatures: ['Support prioritaire'],
   },
   enterprise: {
@@ -90,7 +90,11 @@ export default function Pricing() {
             <li>{formatStreams(t, premium?.max_concurrent_streams ?? 2)}</li>
             {(copy.premium.extraFeatures ?? []).map((f) => <li key={f}>{f}</li>)}
           </ul>
-          <Link to="/register" className="btn-primary full">{copy.premium.ctaLabel}</Link>
+          {/* No self-serve billing exists in this app — an admin upgrades
+              the account by hand (role change or a quota override) after
+              being contacted, so this deliberately goes to Contact rather
+              than Register. */}
+          <Link to="/contact" className="btn-primary full">{copy.premium.ctaLabel}</Link>
         </div>
 
         <div className="price-card">

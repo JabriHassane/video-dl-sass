@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../AuthContext.jsx';
 import { useT } from '../LanguageContext.jsx';
@@ -9,9 +9,13 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const { refresh } = useAuth();
+  const { authenticated, loading, refresh } = useAuth();
   const t = useT();
   const navigate = useNavigate();
+
+  // Same guard as Login: an already-signed-in visitor lands on /app
+  // instead of seeing a registration form for an account they already have.
+  if (!loading && authenticated) return <Navigate to="/app" replace />;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -20,7 +24,7 @@ export default function Register() {
     try {
       await api.register(email, password);
       await refresh();
-      navigate('/');
+      navigate('/app');
     } catch (err) {
       setError(err.message);
     } finally {

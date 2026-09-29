@@ -16,6 +16,7 @@ import registerAuth from './plugins/authenticate.js';
 import authRoutes from './routes/auth.js';
 import downloadRoutes from './routes/download.js';
 import adminRoutes from './routes/admin.js';
+import accountRoutes from './routes/account.js';
 import publicRoutes from './routes/public.js';
 
 if (config.cookieSecret === 'change-me-in-prod' && process.env.NODE_ENV === 'production') {
@@ -128,6 +129,7 @@ await fastify.register(swagger, {
       { name: 'auth', description: 'Registration, login, session' },
       { name: 'download', description: 'Video and playlist streaming' },
       { name: 'admin', description: 'Quota administration (ADMIN only)' },
+      { name: 'account', description: 'Self-service profile, password and download history' },
       { name: 'public', description: 'Marketing site endpoints (pricing, contact)' },
     ],
   },
@@ -156,6 +158,7 @@ await registerAuth(fastify);
 await fastify.register(authRoutes);
 await fastify.register(downloadRoutes);
 await fastify.register(adminRoutes);
+await fastify.register(accountRoutes);
 await fastify.register(publicRoutes);
 
 fastify.get('/healthz', async () => ({ ok: true }));

@@ -54,7 +54,7 @@ export default function NavBar() {
           {authenticated && user?.role === 'ADMIN' && <Link to="/admin">{t('nav.admin')}</Link>}
           {authenticated ? (
             <>
-              <span className="role-badge">{user.email} · {user.role}</span>
+              <Link to="/account" className="role-badge">{user.email} · {user.role}</Link>
               <button onClick={handleLogout}>{t('nav.logout')}</button>
             </>
           ) : (

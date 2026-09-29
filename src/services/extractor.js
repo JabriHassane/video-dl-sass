@@ -39,7 +39,21 @@ function commonArgs() {
     // formats shifts over time (YouTube-side rollouts/throttling). Try
     // a short list in order instead of hard-coding one that can go
     // stale — see https://github.com/yt-dlp/yt-dlp/issues/12482.
-    '--extractor-args', 'youtube:player_client=android,web,tv',
+    //
+    // android/web/tv only ever expose the single legacy progressive
+    // "https" format (itag 18, capped at 360p) — every higher-quality
+    // https format now requires a GVS PO token we don't have, so
+    // yt-dlp silently drops them. mweb/web_safari/tv_simply expose the
+    // SAME pre-muxed video+audio streams (both vcodec and acodec set,
+    // exactly what availableHeights()/resolveFormat() require) up to
+    // 1080p over HLS (m3u8) instead, which needs no PO token — yt-dlp's
+    // bundled downloader (backed by ffmpeg) reassembles the HLS
+    // segments into one stream on the fly, so this stays a single
+    // pre-muxed output with no extra merging step on our side. Keeping
+    // the original three first costs nothing (they just no-op past
+    // itag 18) and preserves whatever they still cover on other
+    // extractors that reuse this same arg list.
+    '--extractor-args', 'youtube:player_client=android,web,tv,mweb,web_safari,tv_simply',
     ...(cookiesFile ? ['--cookies', cookiesFile] : []),
   ];
 }

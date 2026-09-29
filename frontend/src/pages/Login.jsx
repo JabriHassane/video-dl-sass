@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../AuthContext.jsx';
 import { useT } from '../LanguageContext.jsx';
@@ -9,9 +9,14 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const { refresh } = useAuth();
+  const { authenticated, loading, refresh } = useAuth();
   const t = useT();
   const navigate = useNavigate();
+
+  // Reaching /login (URL typed, bookmarked, back button...) while a
+  // session already exists must not show the form again — send the
+  // visitor straight to the app instead.
+  if (!loading && authenticated) return <Navigate to="/app" replace />;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -20,7 +25,7 @@ export default function Login() {
     try {
       await api.login(email, password);
       await refresh();
-      navigate('/');
+      navigate('/app');
     } catch (err) {
       setError(err.message);
     } finally {

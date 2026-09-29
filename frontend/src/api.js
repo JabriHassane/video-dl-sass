@@ -105,6 +105,13 @@ export const api = {
   sendContactMessage: (payload) => request('/api/contact', { method: 'POST', body: JSON.stringify(payload) }),
   adminContactMessages: () => request('/api/admin/contact-messages'),
 
+  adminStats: () => request('/api/admin/stats'),
+
+  updateProfile: (email) => request('/api/account/profile', { method: 'PATCH', body: JSON.stringify({ email }) }),
+  changePassword: (currentPassword, newPassword) =>
+    request('/api/account/password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }),
+  accountDownloads: (limit = 20) => request(`/api/account/downloads?limit=${limit}`),
+
   siteContent: (lang) => request(`/api/site-content?lang=${encodeURIComponent(lang ?? '')}`),
   languages: () => request('/api/languages'),
   adminSiteContent: () => request('/api/admin/site-content'),

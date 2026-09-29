@@ -1,0 +1,116 @@
+# Production deployment — same shape as MyPortfolio/azwebsite:
+# internal/edge network split, nothing published except the frontend's
+# TLS port, everything else reachable only from inside the Docker network.
+# See DEPLOY.md for the Cloudflare Tunnel side of this.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in your .env file}
+      POSTGRES_DB: video_dl
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d video_dl"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://app:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in your .env file}@postgres:5432/video_dl
+      REDIS_URL: redis://redis:6379
+      COOKIE_SECRET: ${COOKIE_SECRET:?set COOKIE_SECRET in your .env file}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in your .env file}
+      ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-900}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-2592000}
+      # Swagger UI at /docs is free reconnaissance in production — off by
+      # default here (opposite default from the dev compose file).
+      EXPOSE_DOCS: ${EXPOSE_DOCS:-false}
+      # One hop: nginx is the only reverse proxy in front of this app —
+      # cloudflared talks to nginx over TLS, not directly to the app.
+      TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:?set FRONTEND_ORIGINS in your .env file}
+      PORT: "8080"
+      YTDLP_COOKIES_FILE: ${YTDLP_COOKIES_FILE:-}
+    volumes:
+      - ${COOKIES_HOST_PATH:-/dev/null}:/run/secrets/cookies.txt:ro
+    # Explicit alias needed on every network it joins — Compose's default
+    # same-name alias isn't reliably applied when a service joins more than
+    # one network (see MyPortfolio's compose notes for the DNS failure mode
+    # this avoids).
+    networks:
+      internal:
+        aliases:
+          - app
+      edge:
+        aliases:
+          - app
+    security_opt:
+      - no-new-privileges:true
+
+  # Published on 127.0.0.1 (for cloudflared, pointed at localhost:8445 for
+  # the public hostname route) and on the Tailscale interface (for direct
+  # tailnet access) — never 0.0.0.0, so this stays unreachable from the
+  # wider LAN/internet. nginx terminates TLS itself with a self-signed cert
+  # (baked in at build time, see frontend/Dockerfile) and reverse-proxies
+  # /api/ to the app service, so the browser only ever talks to one origin
+  # — same pattern as MyPortfolio/azwebsite.
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:?set VITE_API_URL in your .env file}
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "127.0.0.1:8445:443"
+      - "100.103.213.104:8445:443"
+    networks:
+      - edge
+    # Same musl-libc + Tailscale search-domain DNS gotcha documented in
+    # azwebsite/MyPortfolio's compose — disables the inherited search
+    # domain so Docker's embedded DNS resolves "app" directly.
+    dns_search:
+      - .
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  internal:
+  edge:
+    driver_opts:
+      com.docker.network.driver.mtu: 1280
+
+volumes:
+  pgdata:

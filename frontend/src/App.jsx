@@ -12,6 +12,7 @@ import Download from './pages/Download.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Admin from './pages/Admin.jsx';
+import Account from './pages/Account.jsx';
 import { useAuth } from './AuthContext.jsx';
 
 const MARKETING_PATHS = new Set(['/', '/pricing', '/about', '/faq', '/contact', '/cookies']);
@@ -23,14 +24,22 @@ function RequireAdmin({ children }) {
   return children;
 }
 
+function RequireAuth({ children }) {
+  const { loading, authenticated } = useAuth();
+  if (loading) return <div className="card">Chargement...</div>;
+  if (!authenticated) return <Navigate to="/login" replace />;
+  return children;
+}
+
 export default function App() {
   const location = useLocation();
   const isMarketing = MARKETING_PATHS.has(location.pathname);
+  const isAdmin = location.pathname.startsWith('/admin');
 
   return (
     <>
       <NavBar />
-      <main className={isMarketing ? 'marketing-main' : 'container'}>
+      <main className={isMarketing ? 'marketing-main' : isAdmin ? 'admin-main' : 'container'}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/pricing" element={<Pricing />} />
@@ -41,6 +50,14 @@ export default function App() {
           <Route path="/app" element={<Download />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route
+            path="/account"
+            element={
+              <RequireAuth>
+                <Account />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/admin"
             element={

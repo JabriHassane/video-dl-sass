@@ -388,7 +388,238 @@ button.primary {
   flex-shrink: 0;
 }
 
+.admin-main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.admin-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.admin-sidebar {
+  flex: 0 0 220px;
+  position: sticky;
+  top: 80px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.admin-sidebar h1 {
+  font-size: 1.1rem;
+  margin: 4px 4px 16px;
+}
+
+.admin-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-sidebar-link {
+  display: block;
+  text-align: left;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.admin-sidebar-link:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.admin-sidebar-icon {
+  width: 18px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.admin-sidebar-link.active .admin-sidebar-icon,
+.admin-sidebar-link:hover .admin-sidebar-icon {
+  color: var(--text);
+}
+
+.admin-sidebar-link.active {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+  font-weight: 600;
+}
+
+.admin-content {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+
 .admin-page h2 { margin-top: 32px; }
+.admin-page h2:first-child { margin-top: 0; }
+
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.stat-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 140px;
+  margin-top: 12px;
+  padding: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  /* On a narrow screen the 14 columns below would otherwise be squeezed
+     to unreadable slivers — scroll horizontally instead of shrinking. */
+  overflow-x: auto;
+}
+
+.bar-chart-col {
+  flex: 1 0 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 6px;
+}
+
+.bar-chart-bar {
+  width: 100%;
+  min-height: 2px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+}
+
+.bar-chart-label {
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.hbar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.hbar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.hbar-label {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hbar-track {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.hbar-fill {
+  background: var(--accent);
+  height: 100%;
+}
+
+.hbar-value {
+  text-align: right;
+  color: var(--muted);
+}
+
+.account-form {
+  max-width: 420px;
+  margin-top: 12px;
+}
+
+.quota-bar {
+  margin-top: 12px;
+  height: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.quota-bar-fill {
+  height: 100%;
+  background: var(--accent);
+}
+
+/* Matches the navbar's own tablet breakpoint (see the mobile-nav section
+   below) — a 220px fixed sidebar plus content is workable on a laptop but
+   cramped on an iPad-width screen, well before phone width. */
+@media (max-width: 900px) {
+  .admin-layout { flex-direction: column; gap: 16px; }
+  .admin-sidebar { position: static; width: 100%; flex-basis: auto; }
+  .admin-sidebar nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  /* Without this, each link's own width:100% (desktop's vertical list)
+     would still claim the full row width here, one per line, defeating
+     flex-wrap's job of laying them out as a wrapped row of pills. */
+  .admin-sidebar-link {
+    width: auto;
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-cards { grid-template-columns: repeat(2, 1fr); }
+  .hbar-row { grid-template-columns: 84px 1fr 34px; font-size: 0.8rem; }
+}
 
 .content-editor-block {
   border: 1px solid var(--border);
